@@ -33,15 +33,18 @@
 		var ctx = canvas.getContext("2d")
 		ctx.strokeStyle = '#222'
 		ctx.fillStyle = 'blue'
-		var deadColor = 'black'
-		var liveColor = '#3c3'
+		var live = 1
+		var dead = 0
+		var colors = {}
+		colors[dead] = 'black'
+		colors[live] = '#3c3'
 		var isRunning = false
 		var mousedown = false
 		var canvasWidth
 		var canvasHeight
 		var activeX = -1
 		var activeY = -1
-		var cellSize = 7
+		var cellSize = 10
 		var distanceBetweenCells = 0
 		var currentPop = -1
 		var cyclesAtCurrentPop = 0
@@ -93,7 +96,7 @@
 			for (x = 0; x < maxCols(); x++) {
 				newGrid[x] = []
 				for (y = 0; y < maxRows(); y++) {
-					newGrid[x][y] = isAliveAfterCycle(grid[x][y], liveNeighbors(x, y))
+					newGrid[x][y] = valueAfterCycle(x, y)
 				}
 			}
 			
@@ -110,16 +113,16 @@
 			if ($('#diagnostic').is(':checked') && !isRunning) {
 				survive = '<strong style="color: '
 				neighbors = liveNeighbors(i, j)
-				willLive = isAliveAfterCycle(grid[i][j], neighbors)
-				if (willLive) {survive += 'green'} else {survive += 'red'} 
+				willLive = valueAfterCycle(i, j)
+				if (willLive == live) {survive += 'green'} else {survive += 'red'} 
 				survive += '">' + willLive + '</strong>'
-				text = grid[i][j] ? "Will Survive?" : "Will Grow?"
+				text = grid[i][j] == live ? "Will Survive?" : "Will Grow?"
 				$('#diagnosticInfo').html('(' + i + ',' + j + '): ' + liveNeighbors(i, j) + " live neighbors. " + text + " "  + survive)
 			} else 
 			if (!isRunning) {
 				activeX = i
 				activeY = j
-				grid[i][j] = !grid[i][j]
+				grid[i][j] = (grid[i][j] + 1) % 2
 				drawRect(i, j)
 			}
 		})
@@ -142,7 +145,7 @@
 				if (activeX != i || activeY != j) {
 					activeX = i
 					activeY = j
-					grid[i][j] = !grid[i][j]
+					grid[i][j] = (grid[i][j] + 1) % 2
 					drawRect(i, j)
 				}
 			}
@@ -164,7 +167,7 @@
 			e.preventDefault()
 			for(i = 0; i < maxCols(); i++) {
 				for (j = 0; j < maxRows(); j++) {
-					grid[i][j] = false
+					grid[i][j] = dead
 				}
 			}
 			draw()
@@ -174,7 +177,7 @@
 			e.preventDefault()
 			for(i = 0; i < maxCols(); i++) {
 				for (j = 0; j < maxRows(); j++) {
-					grid[i][j] = true
+					grid[i][j] = live
 				}
 			}
 			draw()
@@ -190,7 +193,7 @@
 				for (j = 0; j < maxRows(); j++) {
 					rand = Math.random()
 					alive = rand > 0.5
-					grid[i][j] = alive
+					grid[i][j] = alive ? live : dead
 				}
 			}
 			
@@ -205,7 +208,7 @@
 		
 		function drawRect(i, j) {
 			ctx.strokeStyle = "#222"
-			ctx.fillStyle = grid[i][j] ? liveColor : deadColor
+			ctx.fillStyle = colors[grid[i][j]]
 			ctx.fillRect(i * Math.floor(canvasWidth / maxCols()), j * Math.floor(canvasHeight / maxRows()), Math.floor(canvasWidth / maxCols()) - distanceBetweenCells, Math.floor(canvasHeight / maxRows()) - distanceBetweenCells);
 		}
 		
@@ -217,17 +220,18 @@
 			}
 		}
 		
-		function isAliveAfterCycle(isCurrentlyAlive, numOfNeighbors) {
-			if (numOfNeighbors == 3) return true
-			if (isCurrentlyAlive) { return numOfNeighbors == 2 }
-			return false;
+		function valueAfterCycle(i, j) {
+			numOfNeighbors = liveNeighbors(i, j)
+			if (numOfNeighbors == 3) return live
+			if (grid[i][j] == live) { return numOfNeighbors == 2 ? live : dead}
+			return dead;
 		}
 		
 		function population() {
 			pop = 0
 			for (x = 0; x < grid.length; x++) {
 				for (y = 0; y < grid[x].length; y++) {
-					if (grid[x][y]) pop++
+					if (grid[x][y] == live) pop++
 				}
 			}
 			return pop
@@ -239,14 +243,14 @@
 			bN = (j + 1) % grid[i].length
 			uN = j - 1 < 0 ? grid[i].length - 1 : j - 1
 			neighbors = 0
-			if (grid[rN][j]) neighbors++
-			if (grid[lN][j]) neighbors++
-			if (grid[rN][uN]) neighbors++
-			if (grid[rN][bN]) neighbors++
-			if (grid[lN][uN]) neighbors++
-			if (grid[lN][bN]) neighbors++
-			if (grid[i][uN]) neighbors++
-			if (grid[i][bN]) neighbors++
+			if (grid[rN][j] == live) neighbors++
+			if (grid[lN][j] == live) neighbors++
+			if (grid[rN][uN] == live) neighbors++
+			if (grid[rN][bN] == live) neighbors++
+			if (grid[lN][uN] == live) neighbors++
+			if (grid[lN][bN] == live) neighbors++
+			if (grid[i][uN] == live) neighbors++
+			if (grid[i][bN] == live) neighbors++
 			
 			return neighbors
 		}
