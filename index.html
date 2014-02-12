@@ -22,7 +22,7 @@
 		</p>
 		<p id="remainingCyclesP" class="hide"><strong><span id="cyclesTitle"></span>: <span id="remainingCycles"></span></strong></p>
 		<p id="results" class="hide"></p>
-		<canvas width="750" height="500"></canvas><br />
+		<canvas width="300" height="300"></canvas><br />
 		<button id="allDead">All Dead</button>
 		<button id="allAlive">All Alive</button>
 		<button id="randomize">Randomize</button>
@@ -46,8 +46,8 @@
 		var canvasHeight
 		var activeX = -1
 		var activeY = -1
-		var cellSize = 4
-		var distanceBetweenCells = 0
+		var cellSize = 20
+		var distanceBetweenCells = 1
 		var currentPop = -1
 		var cyclesAtCurrentPop = 0
 		var maxCyclesForStabilization = 40
@@ -288,7 +288,7 @@
 			// zombies
 			// if a zombie has three live neighbors, it will die
 			// otherwise, it will remain a zombie
-			if (zombie == grid[i][j]) { if (liveNeighbors(i, j) >= 3) { return dead } return zombie }
+			if (zombie == grid[i][j]) { if (liveNeighbors(i, j) >= 3 || liveNeighbors(i, j) == 0) { return dead } return zombie }
 			
 			numOfNeighbors = liveNeighbors(i, j)
 			// if a live person has at least one zombie neighbor, and
