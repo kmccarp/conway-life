@@ -5,18 +5,22 @@
 			.hide {
 				display: none;
 			}
+			
+			canvas {
+				position: relative;
+			}
 		</style>
 	</head>
 	<body>
 		<strong>Cycles</strong><br />
-		<input type="number" value="500" id="numCycles" hint="cycles" />
+		<input type="number" value="-1" id="numCycles" hint="cycles" />
 		<button id="go">Go!</button>
 		<button id="stop" class="hide">Stop</button><br />
 		<p>
 			<input type="checkbox" id="diagnostic"/>Diagnostic Mode
 			<span id="diagnosticInfo"></span>
 		</p>
-		<p id="remainingCyclesP" class="hide"><strong>Remaining Cycles: <span id="remainingCycles"></span></strong></p>
+		<p id="remainingCyclesP" class="hide"><strong><span id="cyclesTitle"></span>: <span id="remainingCycles"></span></strong></p>
 		<p id="results" class="hide"></p>
 		<canvas width="750" height="500"></canvas><br />
 		<button id="allDead">All Dead</button>
@@ -61,6 +65,7 @@
 		})
 		
 		function complete(results) {
+			isRunning = false
 			$('#remainingCyclesP').addClass('hide')
 			$('#results').html(results)
 			$('#results').removeClass('hide')
@@ -72,7 +77,7 @@
 		
 		function cycle(i, max) {
 			if (!isRunning) { complete('Stopped manually after ' + i + ' cycles'); return; }
-			if (i == max) { isRunning = false; complete('Completed after ' + i + ' cycles'); return; }
+			if (i == max) { complete('Completed after ' + i + ' cycles'); return; }
 			pop = population()
 			if (currentPop == pop) {
 				if (++cyclesAtCurrentPop == maxCyclesForStabilization) {
@@ -81,7 +86,8 @@
 				}
 			}
 			currentPop = pop
-			$('#remainingCycles').html(max - i - 1)
+			if (max > -1) { $('#cyclesTitle').html('Remaining Cycles') } else { $('#cyclesTitle').html('Cycles iterated') }
+			$('#remainingCycles').html(Math.abs(max - i - 1))
 			console.log(max - i)
 			newGrid = []
 			for (x = 0; x < maxCols(); x++) {
@@ -99,8 +105,8 @@
 		
 		$('canvas').mousedown(function(e) {
 			mousedown = true
-			i = Math.floor(e.offsetX / cellSize)
-			j = Math.floor(e.offsetY / cellSize)
+			i = Math.floor(offsetX(e) / cellSize)
+			j = Math.floor(offsetY(e) / cellSize)
 			if ($('#diagnostic').is(':checked') && !isRunning) {
 				survive = '<strong style="color: '
 				neighbors = liveNeighbors(i, j)
@@ -117,11 +123,22 @@
 				drawRect(i, j)
 			}
 		})
+		function offsetX(event) {
+			if (event.offsetX != undefined) return event.offsetX
+			if (event.layerX != undefined) return event.layerX
+			return event.pageX - $('canvas').offset().left
+		}
+		
+		function offsetY(event) {
+			if (event.offsetY != undefined) return event.offsetY
+			if (event.layerY != undefined) return event.layerY
+			return event.pageY - $('canvas').offset().top
+		}
 		
 		$('canvas').mousemove(function(e) {
 			if (mousedown && !isRunning && !$('#diagnostic').is(':checked')) {
-				i = Math.floor(e.offsetX / cellSize)
-				j = Math.floor(e.offsetY / cellSize)
+				i = Math.floor(offsetX(e) / cellSize)
+				j = Math.floor(offsetY(e) / cellSize)
 				if (activeX != i || activeY != j) {
 					activeX = i
 					activeY = j
