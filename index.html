@@ -19,6 +19,7 @@
 		<canvas width="400" height="400"></canvas><br />
 		<button id="allDead">All Dead</button>
 		<button id="allAlive">All Alive</button>
+		<button id="randomize">Randomize</button>
 	</body>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 	<script>
@@ -118,7 +119,11 @@
 			draw()
 		});
 		
-		$(function() {
+		$('#randomize').click(function(e) {
+			randomizeGrid()
+		})
+		
+		function randomizeGrid() {
 			for (i = 0; i < maxCols; i ++) {
 				grid[i] = []
 				for (j = 0; j < maxRows; j++) {
@@ -129,6 +134,10 @@
 			}
 			
 			draw()
+		}
+		
+		$(function() {
+			randomizeGrid()
 		})
 		
 		function drawRect(i, j) {
