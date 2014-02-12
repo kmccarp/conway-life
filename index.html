@@ -10,14 +10,15 @@
 	<body>
 		<strong>Cycles</strong><br />
 		<input type="number" value="500" id="numCycles" hint="cycles" />
-		<button id="go">Go!</button><br />
+		<button id="go">Go!</button>
+		<button id="stop" class="hide">Stop</button><br />
 		<p>
 			<input type="checkbox" id="diagnostic"/>Diagnostic Mode
 			<span id="diagnosticInfo"></span>
 		</p>
 		<p id="remainingCyclesP" class="hide"><strong>Remaining Cycles: <span id="remainingCycles"></span></strong></p>
 		<p id="results" class="hide"></p>
-		<canvas width="400" height="400"></canvas><br />
+		<canvas width="750" height="500"></canvas><br />
 		<button id="allDead">All Dead</button>
 		<button id="allAlive">All Alive</button>
 		<button id="randomize">Randomize</button>
@@ -32,10 +33,11 @@
 		var liveColor = '#3c3'
 		var isRunning = false
 		var mousedown = false
+		var canvasWidth
+		var canvasHeight
 		var activeX = -1
 		var activeY = -1
-		var maxRows = 50
-		var maxCols = 50
+		var cellSize = 7
 		var distanceBetweenCells = 0
 		var currentPop = -1
 		var cyclesAtCurrentPop = 0
@@ -45,23 +47,36 @@
 		
 		$('#go').click(function(e) {
 			numCycles = $('#numCycles').val()
+			$('#go').attr('disabled', 'disabled')
 			$('#remainingCyclesP').removeClass('hide')
 			$('#results').addClass('hide')
 			$('#remainingCycles').html(numCycles)
 			isRunning = true
+			$('#stop').removeClass('hide')
 			setTimeout(function() {cycle(0, numCycles)}, 10);
 		})
+		$('#stop').click(function(e) {
+			isRunning = false
+			complete('Life stopped manually');
+		})
+		
+		function complete(results) {
+			$('#remainingCyclesP').addClass('hide')
+			$('#results').html(results)
+			$('#results').removeClass('hide')
+			$('#stop').addClass('hide')
+			$('#go').removeAttr('disabled')
+			currentPop = -1
+			cyclesAtCurrentPop = 0
+		}
 		
 		function cycle(i, max) {
-			if (i == max) { isRunning = false; $('#remainingCyclesP').addClass('hide'); return; }
+			if (!isRunning) { complete('Stopped manually after ' + i + ' cycles'); return; }
+			if (i == max) { isRunning = false; complete('Completed after ' + i + ' cycles'); return; }
 			pop = population()
 			if (currentPop == pop) {
 				if (++cyclesAtCurrentPop == maxCyclesForStabilization) {
-					$('#remainingCyclesP').addClass('hide')
-					$('#results').html('Population stabilized at ' + pop + ' after ' + (i - maxCyclesForStabilization) + ' cycles.')
-					$('#results').removeClass('hide')
-					currentPop = -1
-					cyclesAtCurrentPop = 0
+					complete('Population stabilized at ' + pop + ' after ' + (i - maxCyclesForStabilization) + ' cycles.')
 					return;
 				}
 			}
@@ -69,9 +84,9 @@
 			$('#remainingCycles').html(max - i - 1)
 			console.log(max - i)
 			newGrid = []
-			for (x = 0; x < maxCols; x++) {
+			for (x = 0; x < maxCols(); x++) {
 				newGrid[x] = []
-				for (y = 0; y < maxRows; y++) {
+				for (y = 0; y < maxRows(); y++) {
 					newGrid[x][y] = isAliveAfterCycle(grid[x][y], liveNeighbors(x, y))
 				}
 			}
@@ -84,8 +99,8 @@
 		
 		$('canvas').mousedown(function(e) {
 			mousedown = true
-			i = Math.floor(e.offsetX / Math.floor(400 / maxCols))
-			j = Math.floor(e.offsetY / Math.floor(400 / maxRows))
+			i = Math.floor(e.offsetX / cellSize)
+			j = Math.floor(e.offsetY / cellSize)
 			if ($('#diagnostic').is(':checked') && !isRunning) {
 				survive = '<strong style="color: '
 				neighbors = liveNeighbors(i, j)
@@ -105,8 +120,8 @@
 		
 		$('canvas').mousemove(function(e) {
 			if (mousedown && !isRunning && !$('#diagnostic').is(':checked')) {
-				i = Math.floor(e.offsetX / Math.floor(400 / maxCols))
-				j = Math.floor(e.offsetY / Math.floor(400 / maxRows))
+				i = Math.floor(e.offsetX / cellSize)
+				j = Math.floor(e.offsetY / cellSize)
 				if (activeX != i || activeY != j) {
 					activeX = i
 					activeY = j
@@ -120,10 +135,18 @@
 			mousedown = false
 		})
 		
+		function maxRows() {
+			return Math.floor(canvasHeight / cellSize)
+		}
+		
+		function maxCols() {
+			return Math.floor(canvasWidth / cellSize)
+		}
+		
 		$('#allDead').click(function(e) {
 			e.preventDefault()
-			for(i = 0; i < maxCols; i++) {
-				for (j = 0; j < maxRows; j++) {
+			for(i = 0; i < maxCols(); i++) {
+				for (j = 0; j < maxRows(); j++) {
 					grid[i][j] = false
 				}
 			}
@@ -132,8 +155,8 @@
 		
 		$('#allAlive').click(function(e) {
 			e.preventDefault()
-			for(i = 0; i < maxCols; i++) {
-				for (j = 0; j < maxRows; j++) {
+			for(i = 0; i < maxCols(); i++) {
+				for (j = 0; j < maxRows(); j++) {
 					grid[i][j] = true
 				}
 			}
@@ -145,9 +168,9 @@
 		})
 		
 		function randomizeGrid() {
-			for (i = 0; i < maxCols; i ++) {
+			for (i = 0; i < maxCols(); i ++) {
 				grid[i] = []
-				for (j = 0; j < maxRows; j++) {
+				for (j = 0; j < maxRows(); j++) {
 					rand = Math.random()
 					alive = rand > 0.5
 					grid[i][j] = alive
@@ -158,18 +181,20 @@
 		}
 		
 		$(function() {
+			canvasWidth = $('canvas').width()
+			canvasHeight = $('canvas').height()
 			randomizeGrid()
 		})
 		
 		function drawRect(i, j) {
 			ctx.strokeStyle = "#222"
 			ctx.fillStyle = grid[i][j] ? liveColor : deadColor
-			ctx.fillRect(i * Math.floor(400 / maxCols), j * Math.floor(400 / maxCols), Math.floor(400 / maxCols) - distanceBetweenCells, Math.floor(400 / maxRows) - distanceBetweenCells);
+			ctx.fillRect(i * Math.floor(canvasWidth / maxCols()), j * Math.floor(canvasHeight / maxRows()), Math.floor(canvasWidth / maxCols()) - distanceBetweenCells, Math.floor(canvasHeight / maxRows()) - distanceBetweenCells);
 		}
 		
 		function draw() {
-			for (i = 0; i < maxCols; i++) {
-				for (j = 0; j < maxRows; j++) {
+			for (i = 0; i < maxCols(); i++) {
+				for (j = 0; j < maxRows(); j++) {
 					drawRect(i, j);
 				}
 			}
