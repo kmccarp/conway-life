@@ -5,9 +5,15 @@ This is an HTML5 rendering of [Conway's Game of Life](http://en.wikipedia.org/wi
 There are a few ways to run this. First, clone the repository.
 
 ### Python
-If you have Python, running it is as simple as navigating to the directory you cloned into and typing
+If you have Python, running it is as simple as navigating to the directory you cloned, and then doing the following:
+
+If on Python 2:
 
 ``python -m SimpleHTTPServer``
+
+If on Python 3:
+
+``python -m http.server``
 
 Navigate to [http://localhost:8000/](http://localhost:8000/) and you're good to go!
 
